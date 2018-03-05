@@ -15,6 +15,13 @@ tf.app.flags.DEFINE_integer("max_seq_len", 20, "Maximum length (in words) of a d
 
 FLAGS = tf.app.flags.FLAGS
 
+def get_Candidates_Answers(base_rep, pre_emb_for_all_vocab, top, rev_vocab):
+    sims_base = 1 - np.squeeze(dist.cdist(base_rep, pre_emb_for_all_vocab, metric="cosine"))
+    sims_base = np.nan_to_num(sims_base)
+    candidate_ids_base = sims_base.argsort()[::-1][:top]
+    candidates_base_mean = [rev_vocab[idx] for idx in candidate_ids_base]
+    return candidates_base_mean
+
 def queryBasline(pre_emb_for_all_vocab, vocab, rev_vocab):
     while True:
         sys.stdout.write("Type a definition: ")
@@ -25,13 +32,19 @@ def queryBasline(pre_emb_for_all_vocab, vocab, rev_vocab):
         top = int(sys.stdin.readline())
         token_ids = utils.sentence_to_token_ids(sentence, vocab)
 
-        base_rep = np.asarray([np.mean(pre_emb_for_all_vocab[token_ids], axis=0)])
-        sims_base = 1 - np.squeeze(dist.cdist(base_rep, pre_emb_for_all_vocab, metric="cosine"))
-        sims_base = np.nan_to_num(sims_base)
-        candidate_ids_base = sims_base.argsort()[::-1][:top]
-        candidates_base = [rev_vocab[idx] for idx in candidate_ids_base]
-        print("Top %s baseline candidates:" % top)
-        for ii, cand in enumerate(candidates_base):
+        base_rep_mean = np.asarray([np.mean(pre_emb_for_all_vocab[token_ids], axis=0)])
+        print("Top %s baseline candidates from W2V mean/add model:" % top)
+        for ii, cand in enumerate(get_Candidates_Answers(base_rep_mean, pre_emb_for_all_vocab, top, rev_vocab)):
+            print("%s: %s" % (ii + 1, cand))
+
+        # base_rep_add = np.asarray([np.sum(pre_emb_for_all_vocab[token_ids], axis=0)])
+        # print("Top %s baseline candidates from W2V add model:" % top)
+        # for ii, cand in enumerate(get_Candidates_Answers(base_rep_add, pre_emb_for_all_vocab, top, rev_vocab)):
+        #     print("%s: %s" % (ii + 1, cand))
+
+        base_rep_mult = np.asarray([np.prod(pre_emb_for_all_vocab[token_ids], axis=0)])
+        print("Top %s baseline candidates from W2V mult model:" % top)
+        for ii, cand in enumerate(get_Candidates_Answers(base_rep_mult, pre_emb_for_all_vocab, top, rev_vocab)):
             print("%s: %s" % (ii + 1, cand))
 
 def main(unused_argv):
