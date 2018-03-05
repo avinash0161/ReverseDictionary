@@ -99,3 +99,43 @@ def pad_sequence(sequence, max_seq_len):
   else:
     padded = sequence + ([PAD_ID] * padding_required)
   return padded
+
+def makeVocabTrainingAndDevFiles(dataPath, targetPath, vocab_dict, maxSeqLen):
+    if not (tf.gfile.Exists(targetPath + ".gloss") and tf.gfile.Exists(targetPath + ".head")):
+        print("Encoding data into token-ids in %s" % targetPath)
+        with tf.gfile.GFile(dataPath, mode="r") as data_file:
+            with tf.gfile.GFile(targetPath + ".gloss", mode="w") as glosses_file:
+                with tf.gfile.GFile(targetPath + ".head", mode="w") as heads_file:
+                    for line in data_file:
+                        token_ids = sentence_to_token_ids(line, vocab_dict)
+                        heads_file.write(str(token_ids[0]) + "\n")
+                        clean_gloss = [w for w in token_ids[1:] if w != token_ids[0]]
+                        glosses_ids = pad_sequence(clean_gloss, maxSeqLen)
+                        glosses_file.write(" ".join([str(t) for t in glosses_ids]) + "\n")
+
+
+def prepare_and_save_data(dataDir, train_file, dev_file, limitedVocab, vocabulary_size, limitedTrainData, max_seq_len):
+    train_file_path = os.path.join(dataDir, train_file)
+    dev_file_path = os.path.join(dataDir, dev_file)
+
+    if limitedVocab:
+        vocabPathStem = os.path.join(dataDir, "definitions_%d" % vocabulary_size)
+    else:
+        vocabPathStem = os.path.join(dataDir, "definitions_UNLIMITED")
+
+    if limitedTrainData:
+        train_target_ids = os.path.join(dataDir, "train.definitions.ids%d" % vocabulary_size)
+        dev_target_ids = os.path.join(dataDir, "dev.definitions.ids%d" % vocabulary_size)
+    else:
+        train_target_ids = os.path.join(dataDir, "train.definitions.idsUNLIMITED")
+        dev_target_ids = os.path.join(dataDir, "dev.definitions.idsUNLIMITED")
+
+    dataPath = os.path.join(dataDir, "definitions.tok")
+    createVocabFile(vocabPathStem, dataPath, limitedVocab, vocabulary_size)
+    vocab, rev_vocab = getVocabulary(dataDir, limitedVocab, vocabulary_size)
+
+    makeVocabTrainingAndDevFiles(train_file_path, train_target_ids, vocab, max_seq_len)
+    makeVocabTrainingAndDevFiles(dev_file_path, dev_target_ids, vocab, max_seq_len)
+
+
+

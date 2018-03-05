@@ -22,7 +22,7 @@ def get_Candidates_Answers(base_rep, pre_emb_for_all_vocab, top, rev_vocab):
     candidates_base_mean = [rev_vocab[idx] for idx in candidate_ids_base]
     return candidates_base_mean
 
-def queryBasline(pre_emb_for_all_vocab, vocab, rev_vocab):
+def queryBaseline(pre_emb_for_all_vocab, vocab, rev_vocab):
     while True:
         sys.stdout.write("Type a definition: ")
         sys.stdout.flush()
@@ -54,7 +54,7 @@ def main(unused_argv):
     pre_emb_dim = 300
 
     pre_embs_for_all_vocab = utils.get_embedding_matrix(embs_dict, vocab, pre_emb_dim)
-    queryBasline(pre_embs_for_all_vocab, vocab, rev_vocab)
+    queryBaseline(pre_embs_for_all_vocab, vocab, rev_vocab)
 
 if __name__ == "__main__":
     tf.app.run()
