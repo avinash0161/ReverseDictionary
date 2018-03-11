@@ -14,7 +14,7 @@ tf.app.flags.DEFINE_boolean("limitedTrainData",True,"Whether to limit the traini
 tf.app.flags.DEFINE_boolean("limitedVocab",True,"Whether to limit the vocabulary")
 tf.app.flags.DEFINE_integer("vocab_size", 100000, "Nunber of words the model knows and stores representations for")
 tf.app.flags.DEFINE_integer("max_seq_len", 20, "Maximum length (in words) of a definition processed by the model")
-tf.app.flags.DEFINE_boolean("restore", True, "Restore a trained model instead of training one.")
+tf.app.flags.DEFINE_boolean("restore", False, "Restore a trained model instead of training one.")
 tf.app.flags.DEFINE_integer("input_embedding_size", 500, "Number of units in word representation.")
 
 tf.app.flags.DEFINE_integer("num_epochs", 2, "Train for this number of sweeps through the training set")

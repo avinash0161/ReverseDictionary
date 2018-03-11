@@ -47,6 +47,21 @@ def queryBaseline(pre_emb_for_all_vocab, vocab, rev_vocab):
         for ii, cand in enumerate(get_Candidates_Answers(base_rep_mult, pre_emb_for_all_vocab, top, rev_vocab)):
             print("%s: %s" % (ii + 1, cand))
 
+def queryBaselineWithConecptDesc(pre_emb_for_all_vocab, vocab, rev_vocab):
+    with tf.gfile.GFile("data/definitions/concept_descriptions.tok", mode="r") as data_file:
+        with tf.gfile.GFile("data/output/concept_Baseline.txt", mode="w") as output_file:
+            for line in data_file:
+                top = 10
+                token_ids = utils.sentence_to_token_ids(line, vocab)
+                base_rep_mean = np.asarray([np.mean(pre_emb_for_all_vocab[token_ids[1:]], axis=0)])
+                print("Top %s baseline candidates from W2V mean/add model:" % top)
+                for ii, cand in enumerate(get_Candidates_Answers(base_rep_mean, pre_emb_for_all_vocab, top, rev_vocab)):
+                    output_file.write(cand + " ")
+                    print(cand + " ")
+                output_file.write("\n")
+                output_file.flush()
+                print("\n")
+
 def main(unused_argv):
     utils.prepareVocabFilesAndGetDataForBaseline(FLAGS.data_dir, FLAGS.limitedVocab, FLAGS.vocab_size)
     vocab, rev_vocab = utils.getVocabulary(FLAGS.data_dir, FLAGS.limitedVocab, FLAGS.vocab_size)
@@ -54,7 +69,8 @@ def main(unused_argv):
     pre_emb_dim = 300
 
     pre_embs_for_all_vocab = utils.get_embedding_matrix(embs_dict, vocab, pre_emb_dim)
-    queryBaseline(pre_embs_for_all_vocab, vocab, rev_vocab)
+    # queryBaseline(pre_embs_for_all_vocab, vocab, rev_vocab)
+    queryBaselineWithConecptDesc(pre_embs_for_all_vocab, vocab, rev_vocab)
 
 if __name__ == "__main__":
     tf.app.run()
