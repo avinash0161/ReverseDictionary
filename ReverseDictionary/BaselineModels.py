@@ -51,7 +51,7 @@ def queryBaselineWithConecptDesc(pre_emb_for_all_vocab, vocab, rev_vocab):
     with tf.gfile.GFile("data/definitions/concept_descriptions.tok", mode="r") as data_file:
         with tf.gfile.GFile("data/output/concept_Baseline.txt", mode="w") as output_file:
             for line in data_file:
-                top = 10
+                top = 100
                 token_ids = utils.sentence_to_token_ids(line, vocab)
                 base_rep_mean = np.asarray([np.mean(pre_emb_for_all_vocab[token_ids[1:]], axis=0)])
                 print("Top %s baseline candidates from W2V mean/add model:" % top)

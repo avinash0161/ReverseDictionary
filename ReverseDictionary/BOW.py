@@ -12,7 +12,8 @@ import os
 tf.app.flags.DEFINE_string("data_dir", "data/definitions/", "Directory for finding training data and dumping processed data.")
 tf.app.flags.DEFINE_string("train_file", "definitions.tok", "File with dictionary definitions for training.")
 tf.app.flags.DEFINE_string("dev_file", "concept_descriptions.tok", "File with dictionary definitions for dev testing.")
-tf.app.flags.DEFINE_string("embeddings_path","embeddings/GoogleWord2Vec.clean.normed.pkl","Path to pre-trained (.pkl) word embeddings.")
+# tf.app.flags.DEFINE_string("embeddings_path","embeddings/GoogleWord2Vec.clean.normed.pkl","Path to pre-trained (.pkl) word embeddings.")
+tf.app.flags.DEFINE_string("embeddings_path","embeddings/glove.6B.300d.txt","Path to pre-trained (.pkl) word embeddings.")
 
 tf.app.flags.DEFINE_boolean("limitedTrainData",True,"Whether to limit the training data")
 tf.app.flags.DEFINE_boolean("limitedVocab",True,"Whether to limit the vocabulary")
@@ -21,7 +22,7 @@ tf.app.flags.DEFINE_integer("max_seq_len", 20, "Maximum length (in words) of a d
 tf.app.flags.DEFINE_boolean("restore", False, "Restore a trained model instead of training one.")
 tf.app.flags.DEFINE_integer("input_embedding_size", 500, "Number of units in word representation.")
 
-tf.app.flags.DEFINE_integer("num_epochs", 2, "Train for this number of sweeps through the training set")
+tf.app.flags.DEFINE_integer("num_epochs", 500, "Train for this number of sweeps through the training set")
 tf.app.flags.DEFINE_float("learning_rate", 0.0001, "Learning rate applied in TF optimiser")
 tf.app.flags.DEFINE_string("save_dir", "/tmp/", "Directory for saving model. If using restore=True, directory to restore from.")
 tf.app.flags.DEFINE_integer("batch_size", 128, "batch size")
@@ -152,9 +153,10 @@ def main(unused_argv):
     vocab_file = os.path.join(FLAGS.data_dir,"definitions_%s.vocab" % FLAGS.vocab_size)
     if not FLAGS.restore:
         input_emb_size = FLAGS.input_embedding_size #500
-        output_embs_dict = utils.load_pretrained_target_embeddings(FLAGS.embeddings_path)
+        output_embs_dict = utils.load_pretrained_target_embeddings_from_file(FLAGS.embeddings_path)
         output_emb_dim = 300
         utils.prepare_and_save_data(FLAGS.data_dir, FLAGS.train_file, FLAGS.dev_file, FLAGS.limitedVocab, FLAGS.vocab_size, FLAGS.limitedTrainData, FLAGS.max_seq_len)
+
         vocab, rev_vocab = utils.getVocabulary(FLAGS.data_dir, FLAGS.limitedVocab, FLAGS.vocab_size)
         output_embs_for_all_vocab = utils.get_embedding_matrix(output_embs_dict, vocab, output_emb_dim)
 
@@ -163,7 +165,8 @@ def main(unused_argv):
         save_path, saver = train_network(model,FLAGS.num_epochs,FLAGS.batch_size,FLAGS.data_dir,FLAGS.save_dir,FLAGS.vocab_size, FLAGS.limitedTrainData)
 
     else:
-        output_embs_dict = utils.load_pretrained_target_embeddings(FLAGS.embeddings_path)
+        # output_embs_dict = utils.load_pretrained_target_embeddings(FLAGS.embeddings_path)
+        output_embs_dict = utils.load_pretrained_target_embeddings_from_file(FLAGS.embeddings_path)
         output_emb_dim = 300
         vocab, rev_vocab = utils.getVocabulary(FLAGS.data_dir, FLAGS.limitedVocab, FLAGS.vocab_size)
         output_embs_for_all_vocab = utils.get_embedding_matrix(output_embs_dict, vocab, output_emb_dim)

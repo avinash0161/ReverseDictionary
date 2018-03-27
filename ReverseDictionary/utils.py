@@ -4,6 +4,7 @@ import re
 import os
 import pickle
 import numpy as np
+from nltk.stem import PorterStemmer
 
 _splitExpression = re.compile("([.,!?\"':;)(])")
 _digitsExpression = re.compile(r"\d")
@@ -63,6 +64,37 @@ def getVocabulary(dataDir, limitedVocab = False, vocabLimit = 100000):
         rev_vocab = {y: x for x, y in vocab.items()}
         return vocab, rev_vocab
 
+def getVocabularyIncludingEmbeddings(dataDir, limitedVocab = False, vocabLimit = 100000):
+    if limitedVocab:
+        vocabPathStem = os.path.join(dataDir, "definitions_%d" % vocabLimit)
+    else:
+        vocabPathStem = os.path.join(dataDir, "definitions_UNLIMITED")
+
+    vocabFilePath = vocabPathStem + ".vocab"
+    if tf.gfile.Exists(vocabFilePath):
+        rev_vocab = []
+        with tf.gfile.GFile(vocabFilePath, mode="r") as f:
+            rev_vocab.extend(f.readlines())
+        rev_vocab = [line.strip() for line in rev_vocab]
+        vocab = {x: y for (y, x) in enumerate(rev_vocab)}
+
+        # rev_vocab = [tf.compat.as_bytes(line.strip()) for line in rev_vocab]
+        with open('embeddings/glove.6B.300d.txt', "r") as input_file:
+            for line in input_file:
+                vals = line.rstrip().split(' ')
+                rev_vocab.append(vals[0].strip())
+
+        rev_vocab_dict = {}
+        for word in rev_vocab:
+            if word not in rev_vocab_dict:
+                rev_vocab_dict[word] = 1
+        rev_vocab = []
+        for word in rev_vocab_dict.keys():
+            rev_vocab.append(word)
+        vocabExtended = {x: y for (y, x) in enumerate(rev_vocab)}
+        rev_vocab = {y: x for x, y in vocabExtended.items()}
+        return vocabExtended, rev_vocab, vocab
+
 def prepareVocabFilesAndGetDataForBaseline(dataDir, limitedVocab = False, vocabLimit = 100000):
     if limitedVocab:
         vocabPathStem = os.path.join(dataDir, "definitions_%d" % vocabLimit)
@@ -77,12 +109,40 @@ def load_pretrained_target_embeddings(embeddingsFile):
         pre_embs_dict = pickle.load(input_file)
     return pre_embs_dict
 
+def load_pretrained_target_embeddings_from_file(embeddingsFile):
+    print("Loading pretrained embeddings from %s" % embeddingsFile)
+    pre_embs_dict = {}
+    with open(embeddingsFile, "r") as input_file:
+        for line in input_file:
+            vals = line.rstrip().split(' ')
+            pre_embs_dict[vals[0]] = [float(x) for x in vals[1:]]
+    return pre_embs_dict
+
 def sentence_to_token_ids(sentence, vocabulary):
+    ps = PorterStemmer()
     tokens = basic_tokenizer(sentence)
-    return [vocabulary.get(_digitsExpression.sub(b"0", w), UNK_ID) for w in tokens]
+    tokenList = []
+    count1 = 0
+    count2 = 0
+    count3 = 0
+
+    for w in tokens:
+        if w in vocabulary:
+            tokenList.append(vocabulary.get(_digitsExpression.sub(b"0", w), UNK_ID))
+            count1 += 1
+        elif ps.stem(w) in vocabulary:
+            tokenList.append(vocabulary.get(_digitsExpression.sub(b"0", ps.stem(w)), UNK_ID))
+            count2 += 1
+        else:
+            tokenList.append(UNK_ID)
+            count3 += 1
+    print(sentence + " had these counts " + str(count1) + " " + str(count2) + " "+ str(count3))
+    return tokenList
+    # return [vocabulary.get(_digitsExpression.sub(b"0", w), UNK_ID) for w in tokens]
 
 def get_embedding_matrix(embedding_dict, vocab, emb_dim):
     emb_matrix = np.zeros([len(vocab), emb_dim])
+    x = len(vocab)
     for word,idx in vocab.items():
         if word in embedding_dict:
             emb_matrix[idx] = embedding_dict[word]
